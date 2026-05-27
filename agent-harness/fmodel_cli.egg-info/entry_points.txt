@@ -1,0 +1,2 @@
+[console_scripts]
+fmodel = fmodel_cli.cli:cli
