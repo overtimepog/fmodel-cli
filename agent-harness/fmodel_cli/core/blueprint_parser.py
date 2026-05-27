@@ -115,7 +115,7 @@ def analyze_blueprint_vars(uasset_path: str, uexp_path: str | None = None) -> di
             # Only show variables with 2+ distinct values (filters out property defaults)
             if len(vals) >= 2:
                 var_comparisons[name] = vals
-        elif "/Game/" in name and any(kw in name.lower() for kw in ['fire', 'ball', 'beam', 'disk', 'dragon', 'sword', 'blade', 'wave', 'tornado', 'flame', 'barrage', 'dash', 'blast', 'mega', 'energy']):
+        elif "/Game/" in name:
             bp_mappings[name] = vals
 
     return {

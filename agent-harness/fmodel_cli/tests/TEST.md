@@ -30,7 +30,7 @@
 
 ## E2E Test Plan
 
-### Real PAK file tests (use UWDF PAK as fixture)
+### Real PAK file tests (set FMODEL_TEST_PAK env var)
 - `test_pak_list_full` — List all files in real 263MB PAK, verify count > 1000
 - `test_pak_extract_config` — Extract .ini files, verify content contains expected keys
 - `test_pak_extract_uasset` — Extract .uasset, verify UE4 package magic

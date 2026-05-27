@@ -206,8 +206,9 @@ def blueprint():
 
 @blueprint.command("vars")
 @click.option("--file", "filepath", required=True, help="Path to .uasset file")
+@click.option("--limit", default=30, help="Max BP mappings to show (0 = all)")
 @click.pass_context
-def blueprint_vars(ctx, filepath):
+def blueprint_vars(ctx, filepath, limit):
     """Find variable comparisons in Blueprint bytecode.
 
     Extracts which integer values each variable is compared against.
@@ -226,11 +227,13 @@ def blueprint_vars(ctx, filepath):
         for name, vals in sorted(result["variables"].items()):
             click.echo(f"  {name}: {vals}")
         if result.get("bp_mappings"):
-            click.echo(f"\nBP asset mappings (property initializations):")
-            for path, vals in sorted(result["bp_mappings"].items()):
-                # Extract just the asset name
+            mappings = sorted(result["bp_mappings"].items())
+            click.echo(f"\nBP asset mappings ({len(mappings)} total):")
+            for path, vals in mappings[:limit]:
                 short = path.split("/")[-1]
                 click.echo(f"  {short}: {vals}")
+            if limit > 0 and len(mappings) > limit:
+                click.echo(f"  ... and {len(mappings) - limit} more (use --limit 0 for all)")
 
 
 # ── REPL ─────────────────────────────────────────────────────
