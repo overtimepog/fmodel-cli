@@ -225,6 +225,12 @@ def blueprint_vars(ctx, filepath):
         click.echo(f"\nVariable comparisons:")
         for name, vals in sorted(result["variables"].items()):
             click.echo(f"  {name}: {vals}")
+        if result.get("bp_mappings"):
+            click.echo(f"\nBP asset mappings (property initializations):")
+            for path, vals in sorted(result["bp_mappings"].items()):
+                # Extract just the asset name
+                short = path.split("/")[-1]
+                click.echo(f"  {short}: {vals}")
 
 
 # ── REPL ─────────────────────────────────────────────────────

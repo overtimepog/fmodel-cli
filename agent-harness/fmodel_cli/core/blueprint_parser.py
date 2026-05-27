@@ -55,23 +55,25 @@ def find_variable_comparisons(
     names: list[str],
     max_value: int = 50,
 ) -> dict[str, list[int]]:
-    """Find all "compare variable to small integer" patterns in bytecode.
+    """Find all \"EX_LocalVariable(FName) + value\" patterns in bytecode.
 
-    Pattern: 0x19 0x00 [FName_idx:uint32] [value:int32]
+    Pattern: 0x00 [FName_idx:uint32] [value:int32]
 
-    Returns dict mapping variable name → list of comparison values.
+    This catches both property initializations (in class defaults) and
+    bytecode comparisons (in function scripts). For Blueprint vars,
+    look for names WITHOUT '/' (asset paths are property defaults).
     """
     from collections import defaultdict
 
     results = defaultdict(set)
 
-    for i in range(len(uexp_data) - 10):
-        if uexp_data[i] != 0x19 or uexp_data[i + 1] != 0x00:
+    for i in range(len(uexp_data) - 9):
+        if uexp_data[i] != 0x00:
             continue
-        fname_idx = struct.unpack_from("<I", uexp_data, i + 2)[0]
+        fname_idx = struct.unpack_from("<I", uexp_data, i + 1)[0]
         if not (0 <= fname_idx < len(names)):
             continue
-        val = struct.unpack_from("<I", uexp_data, i + 6)[0]
+        val = struct.unpack_from("<I", uexp_data, i + 5)[0]
         if 0 <= val <= max_value:
             results[names[fname_idx]].add(val)
 
@@ -102,15 +104,22 @@ def analyze_blueprint_vars(uasset_path: str, uexp_path: str | None = None) -> di
     names = parse_name_table(uasset)
     comparisons = find_variable_comparisons(uexp, names)
 
-    # Filter to interesting variables only (skip paths, defaults, callfuncs)
-    interesting = {}
+    # Filter: separate BP variable comparisons from property initializations
+    var_comparisons = {}
+    bp_mappings = {}  # path → value (property initializations)
+    
     for name, vals in comparisons.items():
-        if "/" in name or name.startswith("Default__") or name.startswith("CallFunc_"):
-            continue
-        if len(vals) >= 1:
-            interesting[name] = vals
+        if "/Game/" in name:
+            bp_mappings[name] = vals
+        elif not name.startswith("Default__") and not name.startswith("CallFunc_"):
+            # Only show variables with 2+ distinct values (filters out property defaults)
+            if len(vals) >= 2:
+                var_comparisons[name] = vals
+        elif "/Game/" in name and any(kw in name.lower() for kw in ['fire', 'ball', 'beam', 'disk', 'dragon', 'sword', 'blade', 'wave', 'tornado', 'flame', 'barrage', 'dash', 'blast', 'mega', 'energy']):
+            bp_mappings[name] = vals
 
     return {
-        "variables": interesting,
+        "variables": var_comparisons,
+        "bp_mappings": bp_mappings,
         "name_count": len(names),
     }
