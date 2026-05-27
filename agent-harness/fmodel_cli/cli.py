@@ -10,6 +10,7 @@ import click
 
 from fmodel_cli.core.pak_parser import PakParser
 from fmodel_cli.core.asset_parser import inspect_asset
+from fmodel_cli.core.blueprint_parser import analyze_blueprint_vars
 
 
 @click.group(invoke_without_command=True)
@@ -193,6 +194,37 @@ def asset_strings(ctx, filepath, pattern):
             click.echo(f"  {s}")
         if len(strings) > 100:
             click.echo(f"  ... and {len(strings) - 100} more ({len(strings)} total)")
+
+
+# ── Blueprint analysis ───────────────────────────────────────
+
+
+@asset.group()
+def blueprint():
+    """Blueprint bytecode analysis."""
+
+
+@blueprint.command("vars")
+@click.option("--file", "filepath", required=True, help="Path to .uasset file")
+@click.pass_context
+def blueprint_vars(ctx, filepath):
+    """Find variable comparisons in Blueprint bytecode.
+
+    Extracts which integer values each variable is compared against.
+    Useful for finding enum/Switch-on-Int case values.
+    """
+    result = analyze_blueprint_vars(filepath)
+
+    if "error" in result:
+        click.echo(result["error"], err=True)
+
+    if ctx.obj["json"]:
+        click.echo(json.dumps(result, indent=2))
+    else:
+        click.echo(f"Name table: {result['name_count']} entries")
+        click.echo(f"\nVariable comparisons:")
+        for name, vals in sorted(result["variables"].items()):
+            click.echo(f"  {name}: {vals}")
 
 
 # ── REPL ─────────────────────────────────────────────────────
